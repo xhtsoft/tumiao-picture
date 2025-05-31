@@ -69,7 +69,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setUserAccount(userRegisterRequest.getUserAccount());
         user.setUserPassword(encryptPassword);
-        user.setUserName("无名喵" + IdUtil.fastSimpleUUID().substring(0, 3));
+        user.setUserName("无名喵" + IdUtil.fastSimpleUUID().substring(0, 4));
         user.setUserRole(UserRoleEnum.USER.getValue());
         boolean saveResult = this.save(user);
         ThrowUtil.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "用户注册失败");
