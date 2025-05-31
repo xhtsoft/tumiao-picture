@@ -11,6 +11,8 @@ spring:
     url: jdbc:mysql://localhost:3306/tumiao_picture
     username: root
     password: 1234
+  profiles:
+    active: local
 mybatis-plus:
   configuration:
     # Mybatis-Plus 驼峰转下划线
