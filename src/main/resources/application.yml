@@ -13,6 +13,10 @@ spring:
     password: 1234
   profiles:
     active: local
+  # servlet 最大文件上传体积
+  servlet:
+    multipart:
+      max-file-size: 10MB
 mybatis-plus:
   configuration:
     # Mybatis-Plus 驼峰转下划线

@@ -27,6 +27,12 @@ public class FileController {
     @Resource
     private CosManager cosManager;
 
+    /**
+     * 测试文件上传
+     *
+     * @param multipartFile 文件对象
+     * @return 文件路径
+     */
     @PostMapping("/test/upload")
     public BaseResponse<String> uploadFile(@RequestPart("file") MultipartFile multipartFile) {
         String fileName = multipartFile.getOriginalFilename();
