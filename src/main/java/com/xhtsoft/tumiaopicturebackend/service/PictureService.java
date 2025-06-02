@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureQueryRequest;
+import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureReviewRequest;
 import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureUploadRequest;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Picture;
 import com.xhtsoft.tumiaopicturebackend.model.entity.User;
@@ -22,10 +23,10 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile
-     * @param pictureUploadRequest
-     * @param loginUser
-     * @return
+     * @param multipartFile        文件
+     * @param pictureUploadRequest 图片上传请求
+     * @param loginUser            登录用户
+     * @return 图片视图
      */
     PictureVO uploadPicture(MultipartFile multipartFile,
                             PictureUploadRequest pictureUploadRequest,
@@ -34,9 +35,9 @@ public interface PictureService extends IService<Picture> {
     /**
      * 获取pictureVO
      *
-     * @param picture
-     * @param request
-     * @return
+     * @param picture 图片
+     * @param request http请求
+     * @return pictureVO
      */
     PictureVO getPictureVO(Picture picture, HttpServletRequest request);
 
@@ -56,4 +57,27 @@ public interface PictureService extends IService<Picture> {
      * @return 图片查询条件
      */
     QueryWrapper<Picture> getQueryWrapper(PictureQueryRequest pictureQueryRequest);
+
+    /**
+     * 校验数据
+     *
+     * @param picture 图片
+     */
+    void validPicture(Picture picture);
+
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest 图片审核请求
+     * @param loginUser            登录用户
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 填充审核状态
+     *
+     * @param picture   图片
+     * @param loginUser 登录用户
+     */
+    void fillReviewStatus(Picture picture, User loginUser);
 }
