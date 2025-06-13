@@ -225,7 +225,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
     }
 }
-
-
-
-

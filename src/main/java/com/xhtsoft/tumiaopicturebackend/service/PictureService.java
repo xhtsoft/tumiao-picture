@@ -9,7 +9,6 @@ import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureUploadRequest;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Picture;
 import com.xhtsoft.tumiaopicturebackend.model.entity.User;
 import com.xhtsoft.tumiaopicturebackend.model.vo.PictureVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -23,12 +22,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile        文件
+     * @param inputSource          上传的文件源
      * @param pictureUploadRequest 图片上传请求
      * @param loginUser            登录用户
      * @return 图片视图
      */
-    PictureVO uploadPicture(MultipartFile multipartFile,
+    PictureVO uploadPicture(Object inputSource,
                             PictureUploadRequest pictureUploadRequest,
                             User loginUser);
 
