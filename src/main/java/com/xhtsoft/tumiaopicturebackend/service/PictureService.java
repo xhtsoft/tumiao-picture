@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureQueryRequest;
 import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureReviewRequest;
+import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureUploadByBatchRequest;
 import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureUploadRequest;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Picture;
 import com.xhtsoft.tumiaopicturebackend.model.entity.User;
@@ -79,4 +80,14 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser 登录用户
      */
     void fillReviewStatus(Picture picture, User loginUser);
+
+    /**
+     * 批量上传图片
+     *
+     * @param pictureUploadByBatchRequest 图片上传批量请求
+     * @param loginUser                   登录用户
+     * @return 图片数量
+     */
+    int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest,
+                                 User loginUser);
 }

@@ -14,11 +14,16 @@ public class PictureUploadByBatchRequest implements Serializable {
     /**
      * 抓取搜索词
      */
-    private String text;
+    private String searchText;
 
     /**
      * 默认抓取数量为10
      */
-    private Integer num = 10;
+    private Integer count = 10;
+
+    /**
+     * 图片名称前缀
+     */
+    private String namePrefix;
 
 }
