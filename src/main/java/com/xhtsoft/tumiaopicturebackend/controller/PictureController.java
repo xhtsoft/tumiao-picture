@@ -1,8 +1,11 @@
 package com.xhtsoft.tumiaopicturebackend.controller;
 
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.xhtsoft.tumiaopicturebackend.annotation.AuthCheck;
 import com.xhtsoft.tumiaopicturebackend.common.BaseResponse;
 import com.xhtsoft.tumiaopicturebackend.common.DeleteRequest;
@@ -21,6 +24,9 @@ import com.xhtsoft.tumiaopicturebackend.service.PictureService;
 import com.xhtsoft.tumiaopicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
@@ -40,6 +47,19 @@ public class PictureController {
 
     @Resource
     private PictureService pictureService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 本地缓存
+     */
+    private final Cache<String, String> LOCAL_CACHE =
+            Caffeine.newBuilder().initialCapacity(1024)
+                    .maximumSize(10000L) // 最大缓存数量为10000
+                    .expireAfterWrite(5L, TimeUnit.MINUTES)// 缓存 5 分钟移除
+                    .build();
+
 
     /**
      * 上传图片
@@ -206,6 +226,48 @@ public class PictureController {
                 pictureService.getQueryWrapper(pictureQueryRequest));
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
+    }
+
+    /**
+     * 分页获取图片列表（封装,有缓存）
+     *
+     * @param pictureQueryRequest 图片查询请求
+     * @param request             http请求
+     * @return 图片VO分页列表
+     */
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                                      HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtil.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 设置用户仅能看到审核通过的图片
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 先查询缓存，缓存中没有再去查询数据库
+        // 构建缓存的 key
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String redisKey = String.format("tumiao:listPictureVOByPage:%s", hashKey);
+        // 操作Redis，从缓存中查询
+        ValueOperations<String, String> opsForValue = stringRedisTemplate.opsForValue();
+        String cachedValue = opsForValue.get(redisKey);
+        if (cachedValue != null) {
+            // 缓存命中
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachedPage);
+        }
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+                pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+        // 存入Redis缓存
+        String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
+        // 设置缓存过期时间，5 - 10分钟过期，防止缓存雪崩
+        int expireTime = RandomUtil.randomInt(5 * 60, 10 * 60);
+        opsForValue.set(redisKey, cacheValue, expireTime, TimeUnit.SECONDS);
+        return ResultUtils.success(pictureVOPage);
     }
 
     /**

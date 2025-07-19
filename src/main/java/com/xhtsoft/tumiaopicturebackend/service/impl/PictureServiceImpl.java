@@ -385,6 +385,3 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return uploadNum;
     }
 }
-
-
-

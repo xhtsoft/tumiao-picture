@@ -11,6 +11,12 @@ spring:
     url: jdbc:mysql://localhost:3306/tumiao_picture
     username: root
     password: 1234
+  # Redis配置
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    timeout: 5000
   profiles:
     active: local
   # servlet 最大文件上传体积
