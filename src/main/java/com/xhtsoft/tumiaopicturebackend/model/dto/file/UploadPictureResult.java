@@ -9,6 +9,11 @@ import lombok.Data;
 public class UploadPictureResult {
 
     /**
+     * 缩略图图片 url
+     */
+    private String thumbnailUrl;
+
+    /**
      * 图片地址
      */
     private String url;

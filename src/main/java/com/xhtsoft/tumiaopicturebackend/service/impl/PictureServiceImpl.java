@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xhtsoft.tumiaopicturebackend.exception.BusinessException;
 import com.xhtsoft.tumiaopicturebackend.exception.ErrorCode;
 import com.xhtsoft.tumiaopicturebackend.exception.ThrowUtil;
+import com.xhtsoft.tumiaopicturebackend.manager.CosManager;
 import com.xhtsoft.tumiaopicturebackend.manager.upload.FilePictureUpload;
 import com.xhtsoft.tumiaopicturebackend.manager.upload.PictureUploadTemplate;
 import com.xhtsoft.tumiaopicturebackend.manager.upload.UrlPictureUpload;
@@ -33,6 +34,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -59,6 +62,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UserService userService;
+    @Autowired
+    private CosManager cosManager;
 
     /**
      * 上传图片
@@ -83,6 +88,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             // 仅本人或管理员可编辑图片
             ThrowUtil.throwIf(!loginUser.getId().equals(oldPicture.getUserId()) && !userService.isAdmin(loginUser),
                     ErrorCode.NO_AUTH_ERROR);
+            // 清理旧图片
+            clearPictureFile(oldPicture);
         }
         // 上传图片
         // 按照用户id划分目录
@@ -106,6 +113,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         picture.setUserId(loginUser.getId());
         // 操作数据库
         if (pictureId != null && pictureId > 0) {
@@ -383,5 +391,30 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         return uploadNum;
+    }
+
+    /**
+     * 清理图片文件
+     *
+     * @param oldPicture 旧图片
+     */
+    @Async
+    @Override
+    public void clearPictureFile(Picture oldPicture) {
+        // 判断该图片是否被多条记录使用
+        String url = oldPicture.getUrl();
+        Long count = this.lambdaQuery()
+                .eq(Picture::getUrl, url)
+                .count();
+        // 不止一条记录在使用该图片
+        if(count > 1){
+            return;
+        }
+        // 删除图片
+        cosManager.deleteObject(url);
+        // 删除缩略图
+        if(StrUtil.isNotBlank(oldPicture.getThumbnailUrl())){
+            cosManager.deleteObject(oldPicture.getThumbnailUrl());
+        }
     }
 }

@@ -116,6 +116,8 @@ public class PictureController {
                 !loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE), ErrorCode.NO_AUTH_ERROR);
         boolean removeResult = pictureService.removeById(deleteRequest.getId());
         ThrowUtil.throwIf(!removeResult, ErrorCode.OPERATION_ERROR, "图片删除失败");
+        // 清理图片文件
+        pictureService.clearPictureFile(oldPicture);
         return ResultUtils.success(removeResult);
     }
 
@@ -144,6 +146,7 @@ public class PictureController {
         long id = pictureUpdateRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtil.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+
         // 插入数据库之前，补充审核参数
         User loginUser = userService.getLoginUser(request);
         pictureService.fillReviewStatus(picture, loginUser);
@@ -249,11 +252,18 @@ public class PictureController {
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
         String redisKey = String.format("tumiao:listPictureVOByPage:%s", hashKey);
+        // 构建Caffeine缓存的key
+        String caffeineKey = String.format("listPictureVOByPage:%s", hashKey);
+        String caffeineValue = LOCAL_CACHE.getIfPresent(caffeineKey);
+        if(caffeineValue != null){
+            return ResultUtils.success(JSONUtil.toBean(caffeineValue, Page.class));
+        }
         // 操作Redis，从缓存中查询
         ValueOperations<String, String> opsForValue = stringRedisTemplate.opsForValue();
         String cachedValue = opsForValue.get(redisKey);
         if (cachedValue != null) {
-            // 缓存命中
+            // 缓存命中，更新本地缓存
+            LOCAL_CACHE.put(caffeineKey, cachedValue);
             Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
             return ResultUtils.success(cachedPage);
         }
@@ -262,9 +272,11 @@ public class PictureController {
                 pictureService.getQueryWrapper(pictureQueryRequest));
         // 获取封装类
         Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
-        // 存入Redis缓存
+        // 设置缓存的值
         String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
-        // 设置缓存过期时间，5 - 10分钟过期，防止缓存雪崩
+        // 存入本地缓存
+        LOCAL_CACHE.put(caffeineKey, cacheValue);
+        // 设置缓存过期时间，5 - 10分钟过期，防止缓存雪崩，存入Redis
         int expireTime = RandomUtil.randomInt(5 * 60, 10 * 60);
         opsForValue.set(redisKey, cacheValue, expireTime, TimeUnit.SECONDS);
         return ResultUtils.success(pictureVOPage);
