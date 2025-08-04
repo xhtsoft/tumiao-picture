@@ -22,6 +22,11 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
     private Long id;
 
     /**
+     * 空间id
+     */
+    private Long spaceId;
+
+    /**
      * 图片名称
      */
     private String name;
@@ -96,4 +101,8 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      */
     private Date reviewTime;
 
+    /**
+     * 是否只查询spaceId为null的数据
+     */
+    private boolean nullSpaceId;
 }

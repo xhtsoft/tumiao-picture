@@ -18,6 +18,7 @@
         <result property="picScale" column="picScale"/>
         <result property="picFormat" column="picFormat"/>
         <result property="userId" column="userId"/>
+        <result property="spaceId" column="spaceId"/>
         <result property="createTime" column="createTime"/>
         <result property="editTime" column="editTime"/>
         <result property="updateTime" column="updateTime"/>
@@ -30,7 +31,7 @@
 
     <sql id="Base_Column_List">
         id,url,thumbnailUrl,name,introduction,category,tags,
-        picSize,picWidth,picHeight,picScale,picFormat,
+        picSize,picWidth,picHeight,picScale,picFormat,spaceId，
         userId,createTime,editTime,updateTime,isDelete,
         reviewStatus,reviewMessage,reviewerId,reviewTime
     </sql>

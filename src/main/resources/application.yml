@@ -2,6 +2,10 @@ server:
   port: 8123
   servlet:
     context-path: /api
+    # cookie10小时过期
+    session:
+      cookie:
+        max-age: 36000
 spring:
   application:
     name: tumiao-picture-backend
@@ -17,6 +21,11 @@ spring:
     host: 127.0.0.1
     port: 6379
     timeout: 5000
+  # session配置
+  session:
+    store-type: redis
+    # session 10小时过期时间
+    timeout: 36000
   profiles:
     active: local
   # servlet 最大文件上传体积

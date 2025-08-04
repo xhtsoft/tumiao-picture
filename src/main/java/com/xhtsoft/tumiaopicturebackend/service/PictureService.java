@@ -3,10 +3,7 @@ package com.xhtsoft.tumiaopicturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureQueryRequest;
-import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureReviewRequest;
-import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.xhtsoft.tumiaopicturebackend.model.dto.picture.PictureUploadRequest;
+import com.xhtsoft.tumiaopicturebackend.model.dto.picture.*;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Picture;
 import com.xhtsoft.tumiaopicturebackend.model.entity.User;
 import com.xhtsoft.tumiaopicturebackend.model.vo.PictureVO;
@@ -89,7 +86,7 @@ public interface PictureService extends IService<Picture> {
      * @return 图片数量
      */
     int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest,
-                                 User loginUser);
+                             User loginUser);
 
     /**
      * 清理图片文件
@@ -97,4 +94,27 @@ public interface PictureService extends IService<Picture> {
      * @param oldPicture 旧图片
      */
     void clearPictureFile(Picture oldPicture);
+
+    /**
+     * 校验空间图片的权限
+     *
+     * @param loginUser 登录用户
+     * @param picture   图片
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
+
+    /**
+     * 删除图片
+     *
+     * @param pictureId 图片id
+     * @param loginUser 登录用户
+     */
+    void deletePicture(long pictureId, User loginUser);
+
+    /**
+     * 编辑图片
+     * @param pictureEditRequest
+     * @param loginUser
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 }
