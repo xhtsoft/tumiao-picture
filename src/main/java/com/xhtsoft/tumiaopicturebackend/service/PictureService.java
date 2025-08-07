@@ -9,6 +9,7 @@ import com.xhtsoft.tumiaopicturebackend.model.entity.User;
 import com.xhtsoft.tumiaopicturebackend.model.vo.PictureVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @author xhtsoft
@@ -113,8 +114,27 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 编辑图片
+     *
      * @param pictureEditRequest
      * @param loginUser
      */
     void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 根据颜色搜索图片
+     *
+     * @param spaceId   空间id
+     * @param color     颜色
+     * @param loginUser 登录用户
+     * @return 图片视图列表
+     */
+    List<PictureVO> searchPictureByColor(Long spaceId, String color, User loginUser);
+
+    /**
+     * 批量编辑图片
+     *
+     * @param pictureEditByBatchRequest 图片批量编辑请求
+     * @param loginUser                 登录用户
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
 }

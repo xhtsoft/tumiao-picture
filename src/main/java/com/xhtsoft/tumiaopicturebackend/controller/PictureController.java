@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.xhtsoft.tumiaopicturebackend.annotation.AuthCheck;
+import com.xhtsoft.tumiaopicturebackend.api.imagesearch.ImageSearchApiFacade;
+import com.xhtsoft.tumiaopicturebackend.api.imagesearch.model.ImageSearchResult;
 import com.xhtsoft.tumiaopicturebackend.common.BaseResponse;
 import com.xhtsoft.tumiaopicturebackend.common.DeleteRequest;
 import com.xhtsoft.tumiaopicturebackend.common.ResultUtils;
@@ -336,7 +338,7 @@ public class PictureController {
      * @param request              http请求
      * @return 是否成功
      */
-    @PostMapping("review")
+    @PostMapping("/review")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest,
                                                  HttpServletRequest request) {
@@ -354,7 +356,7 @@ public class PictureController {
      * @param request                     http请求
      * @return 上传成功的条数
      */
-    @PostMapping("upload/batch")
+    @PostMapping("/upload/batch")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
                                                       HttpServletRequest request) {
@@ -363,5 +365,55 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         Integer uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
         return ResultUtils.success(uploadCount);
+    }
+
+    /**
+     * 图片搜索（图片）
+     *
+     * @param searchPictureByPictureRequest 图片搜索请求
+     * @return 图片搜索结果
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtil.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtil.throwIf(pictureId == null && pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture picture = pictureService.getById(pictureId);
+        ThrowUtil.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        List<ImageSearchResult> imageSearchResults = ImageSearchApiFacade.searchImage(picture.getUrl());
+        return ResultUtils.success(imageSearchResults);
+    }
+
+    /**
+     * 图片搜索（颜色）
+     *
+     * @param searchPictureByColorRequest 图片搜索请求
+     * @param request                     http请求
+     * @return 图片搜索结果
+     */
+    @PostMapping("/search/color")
+    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest
+            , HttpServletRequest request) {
+        ThrowUtil.throwIf(searchPictureByColorRequest == null, ErrorCode.PARAMS_ERROR);
+        String picColor = searchPictureByColorRequest.getPicColor();
+        Long spaceId = searchPictureByColorRequest.getSpaceId();
+        List<PictureVO> pictureVOList = pictureService.searchPictureByColor(spaceId, picColor, userService.getLoginUser(request));
+        return ResultUtils.success(pictureVOList);
+    }
+
+    /**
+     * 图片批量编辑
+     *
+     * @param pictureEditByBatchRequest 图片批量编辑请求
+     * @param request                   http请求
+     * @return 是否成功
+     */
+    @PostMapping("/edit/batch")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        // 数据校验
+        ThrowUtil.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        return ResultUtils.success(true);
     }
 }
