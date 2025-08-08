@@ -9,6 +9,9 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xhtsoft.tumiaopicturebackend.api.aliyunAI.AliyunAIApi;
+import com.xhtsoft.tumiaopicturebackend.api.aliyunAI.model.CreateOutPaintingTaskRequest;
+import com.xhtsoft.tumiaopicturebackend.api.aliyunAI.model.CreateOutPaintingTaskResponse;
 import com.xhtsoft.tumiaopicturebackend.exception.BusinessException;
 import com.xhtsoft.tumiaopicturebackend.exception.ErrorCode;
 import com.xhtsoft.tumiaopicturebackend.exception.ThrowUtil;
@@ -75,6 +78,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private AliyunAIApi aliyunAIApi;
 
     /**
      * 上传图片
@@ -670,6 +676,28 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 5.操作数据库
         boolean result = this.updateBatchById(pictureList);
         ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片批量更新操作失败");
+    }
+
+    /**
+     * 创建图片外绘任务
+     *
+     * @param createPictureOutPaintingTaskRequest 图片外绘任务创建请求
+     * @param loginUser                           登录用户
+     * @return 创建的图片外绘任务响应
+     */
+    @Override
+    public CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser) {
+        Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
+        ThrowUtil.throwIf(pictureId == null, ErrorCode.PARAMS_ERROR, "请选择图片");
+        Picture picture = this.getById(pictureId);
+        checkPictureAuth(loginUser, picture);
+        CreateOutPaintingTaskRequest createOutPaintingTaskRequest = new CreateOutPaintingTaskRequest();
+        CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
+        input.setImageUrl(picture.getUrl());
+        createOutPaintingTaskRequest.setInput(input);
+        createOutPaintingTaskRequest.setParameters(createPictureOutPaintingTaskRequest.getParameters());
+        // 创建任务
+        return aliyunAIApi.createOutPaintingTask(createOutPaintingTaskRequest);
     }
 
     /**

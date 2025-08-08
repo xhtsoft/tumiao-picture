@@ -2,11 +2,15 @@ package com.xhtsoft.tumiaopicturebackend.controller;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.xhtsoft.tumiaopicturebackend.annotation.AuthCheck;
+import com.xhtsoft.tumiaopicturebackend.api.aliyunAI.AliyunAIApi;
+import com.xhtsoft.tumiaopicturebackend.api.aliyunAI.model.CreateOutPaintingTaskResponse;
+import com.xhtsoft.tumiaopicturebackend.api.aliyunAI.model.GetOutPaintingTaskResponse;
 import com.xhtsoft.tumiaopicturebackend.api.imagesearch.ImageSearchApiFacade;
 import com.xhtsoft.tumiaopicturebackend.api.imagesearch.model.ImageSearchResult;
 import com.xhtsoft.tumiaopicturebackend.common.BaseResponse;
@@ -56,6 +60,9 @@ public class PictureController {
 
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private AliyunAIApi aliyunAIApi;
 
     /**
      * 本地缓存
@@ -415,5 +422,36 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 创建扩图任务
+     *
+     * @param createPictureOutPaintingTaskRequest 创建图片扩展任务请求
+     * @param request                             http请求
+     * @return 创建图片扩展任务结果
+     */
+    @PostMapping("/out_painting/create_task")
+    public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
+            @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
+            HttpServletRequest request) {
+        ThrowUtil.throwIf(createPictureOutPaintingTaskRequest == null
+                || createPictureOutPaintingTaskRequest.getPictureId() == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        CreateOutPaintingTaskResponse pictureOutPaintingTask = pictureService.createPictureOutPaintingTask(createPictureOutPaintingTaskRequest, loginUser);
+        return ResultUtils.success(pictureOutPaintingTask);
+    }
+
+    /**
+     * 查询扩图任务
+     *
+     * @param taskId 任务id
+     * @return 获取图片扩展任务结果
+     */
+    @GetMapping("/out_painting/get_task")
+    public BaseResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
+        ThrowUtil.throwIf(StrUtil.isBlank(taskId), ErrorCode.PARAMS_ERROR, "传入taskId错误");
+        GetOutPaintingTaskResponse outPaintingTask = aliyunAIApi.getOutPaintingTask(taskId);
+        return ResultUtils.success(outPaintingTask);
     }
 }
