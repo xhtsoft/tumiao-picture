@@ -10,6 +10,7 @@ import com.xhtsoft.tumiaopicturebackend.constant.UserConstant;
 import com.xhtsoft.tumiaopicturebackend.exception.BusinessException;
 import com.xhtsoft.tumiaopicturebackend.exception.ErrorCode;
 import com.xhtsoft.tumiaopicturebackend.exception.ThrowUtil;
+import com.xhtsoft.tumiaopicturebackend.manager.auth.SpaceUserAuthManager;
 import com.xhtsoft.tumiaopicturebackend.model.dto.space.*;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Space;
 import com.xhtsoft.tumiaopicturebackend.model.entity.User;
@@ -38,6 +39,9 @@ public class SpaceController {
 
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     @PostMapping("/add")
     public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
@@ -130,8 +134,12 @@ public class SpaceController {
         // 查询数据库
         Space space = spaceService.getById(id);
         ThrowUtil.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVO.setPermissionList(permissionList);
         // 获取封装类
-        return ResultUtils.success(spaceService.getSpaceVO(space, request));
+        return ResultUtils.success(spaceVO);
     }
 
     /**
@@ -199,9 +207,7 @@ public class SpaceController {
         Space oldSpace = spaceService.getById(id);
         ThrowUtil.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         // 仅本人或管理员可编辑
-        if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
+        spaceService.checkSpaceAuth(loginUser, oldSpace);
         // 操作数据库
         boolean result = spaceService.updateById(space);
         ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR);

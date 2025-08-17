@@ -11,6 +11,7 @@ import com.xhtsoft.tumiaopicturebackend.constant.UserConstant;
 import com.xhtsoft.tumiaopicturebackend.exception.BusinessException;
 import com.xhtsoft.tumiaopicturebackend.exception.ErrorCode;
 import com.xhtsoft.tumiaopicturebackend.exception.ThrowUtil;
+import com.xhtsoft.tumiaopicturebackend.manager.auth.StpKit;
 import com.xhtsoft.tumiaopicturebackend.mapper.UserMapper;
 import com.xhtsoft.tumiaopicturebackend.model.dto.user.UserLoginRequest;
 import com.xhtsoft.tumiaopicturebackend.model.dto.user.UserQueryRequest;
@@ -106,6 +107,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 4. 保存用户的登录态
         httpServletRequest.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        // 设置Sa-Token登录
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);
         UserLoginVO userLoginVO = new UserLoginVO();
         BeanUtil.copyProperties(user, userLoginVO);
         return userLoginVO;

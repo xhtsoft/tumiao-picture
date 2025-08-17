@@ -20,6 +20,10 @@ import com.xhtsoft.tumiaopicturebackend.constant.UserConstant;
 import com.xhtsoft.tumiaopicturebackend.exception.BusinessException;
 import com.xhtsoft.tumiaopicturebackend.exception.ErrorCode;
 import com.xhtsoft.tumiaopicturebackend.exception.ThrowUtil;
+import com.xhtsoft.tumiaopicturebackend.manager.auth.SpaceUserAuthManager;
+import com.xhtsoft.tumiaopicturebackend.manager.auth.StpKit;
+import com.xhtsoft.tumiaopicturebackend.manager.auth.annotation.SaSpaceCheckPermission;
+import com.xhtsoft.tumiaopicturebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.xhtsoft.tumiaopicturebackend.model.dto.picture.*;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Picture;
 import com.xhtsoft.tumiaopicturebackend.model.entity.Space;
@@ -64,6 +68,9 @@ public class PictureController {
     @Resource
     private AliyunAIApi aliyunAIApi;
 
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
+
     /**
      * 本地缓存
      */
@@ -84,6 +91,7 @@ public class PictureController {
      */
     @PostMapping("/upload")
     //@AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -102,6 +110,7 @@ public class PictureController {
      */
     @PostMapping("/upload/url")
     //@AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
@@ -118,6 +127,7 @@ public class PictureController {
      * @return 是否成功
      */
     @PostMapping("/delete")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest
             , HttpServletRequest request) {
         ThrowUtil.throwIf(ObjUtil.isNull(deleteRequest), ErrorCode.PARAMS_ERROR);
@@ -194,12 +204,21 @@ public class PictureController {
         ThrowUtil.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         // 权限校验
         Long spaceId = picture.getSpaceId();
+        Space space = null;
+        User loginUser = userService.getLoginUser(request);
         if (spaceId != null) {
-            User LoginUser = userService.getLoginUser(request);
-            pictureService.checkPictureAuth(LoginUser, picture);
+            // User LoginUser = userService.getLoginUser(request);
+            boolean has = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtil.throwIf(!has, ErrorCode.NO_AUTH_ERROR);
+            // pictureService.checkPictureAuth(LoginUser, picture);
+            space = spaceService.getById(spaceId);
+            ThrowUtil.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
         }
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        PictureVO pictureVO = pictureService.getPictureVO(picture, request);
+        pictureVO.setPermissionList(permissionList);
         // 获取封装类
-        return ResultUtils.success(pictureService.getPictureVO(picture, request));
+        return ResultUtils.success(pictureVO);
     }
 
     /**
@@ -242,12 +261,14 @@ public class PictureController {
             pictureQueryRequest.setNullSpaceId(true);
         } else {
             // 私有空间
-            User loginUser = userService.getLoginUser(request);
+            boolean has = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtil.throwIf(!has, ErrorCode.NO_AUTH_ERROR);
+            /*User loginUser = userService.getLoginUser(request);
             Space space = spaceService.getById(spaceId);
             ThrowUtil.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
             if (!loginUser.getId().equals(space.getUserId())) {
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
-            }
+            }*/
         }
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
@@ -315,6 +336,7 @@ public class PictureController {
      * @return 是否成功
      */
     @PostMapping("/edit")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest, HttpServletRequest request) {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -381,6 +403,7 @@ public class PictureController {
      * @return 图片搜索结果
      */
     @PostMapping("/search/picture")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_VIEW)
     public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
         ThrowUtil.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
         Long pictureId = searchPictureByPictureRequest.getPictureId();
@@ -415,6 +438,7 @@ public class PictureController {
      * @param request                   http请求
      * @return 是否成功
      */
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     @PostMapping("/edit/batch")
     public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
         // 数据校验
@@ -432,6 +456,7 @@ public class PictureController {
      * @return 创建图片扩展任务结果
      */
     @PostMapping("/out_painting/create_task")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
             @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
             HttpServletRequest request) {

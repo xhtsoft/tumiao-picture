@@ -501,7 +501,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      *
      * @param loginUser 登录用户
      * @param picture   图片
-     */
     @Override
     public void checkPictureAuth(User loginUser, Picture picture) {
         Long spaceId = picture.getSpaceId();
@@ -517,7 +516,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限访问该图片");
             }
         }
-    }
+    }*/
 
     /**
      * 删除图片
@@ -533,7 +532,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture oldPicture = this.getById(pictureId);
         ThrowUtil.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
         // 校验权限
-        checkPictureAuth(loginUser, oldPicture);
+        // checkPictureAuth(loginUser, oldPicture);
         // 开启事务
         transactionTemplate.execute(status -> {
             // 操作数据库
@@ -575,7 +574,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture oldPicture = this.getById(id);
         ThrowUtil.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
         // 校验权限
-        checkPictureAuth(loginUser, oldPicture);
+        // checkPictureAuth(loginUser, oldPicture);
         // 补充审核参数
         this.fillReviewStatus(picture, loginUser);
         // 操作数据库
@@ -690,7 +689,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
         ThrowUtil.throwIf(pictureId == null, ErrorCode.PARAMS_ERROR, "请选择图片");
         Picture picture = this.getById(pictureId);
-        checkPictureAuth(loginUser, picture);
+        // checkPictureAuth(loginUser, picture);
         CreateOutPaintingTaskRequest createOutPaintingTaskRequest = new CreateOutPaintingTaskRequest();
         CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
         input.setImageUrl(picture.getUrl());
